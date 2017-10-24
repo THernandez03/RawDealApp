@@ -1,0 +1,42 @@
+language: php
+
+php:
+  - 5.4
+  - 5.5
+  - 5.6
+
+env:
+  global:
+    - PLUGIN_NAME=Search
+    - DB=mysql
+    - DEFAULT=1
+
+  matrix:
+     - DB=mysql db_class='Cake\Database\Driver\Mysql' db_dsn='mysql:host=127.0.0.1;dbname=cakephp_test' db_database='cakephp_test' db_username='travis' db_password=''
+
+matrix:
+  include:
+    - php: 5.4
+      env:
+        - PHPCS=1
+        - DEFAULT=0
+
+before_script:
+  - composer self-update
+  - composer install --prefer-source --no-interaction --dev
+
+  - sh -c "if [ '$DB' = 'mysql' ]; then mysql -e 'CREATE DATABASE cakephp_test;'; fi"
+
+  - sh -c "if [ '$PHPCS' = '1' ]; then pear channel-discover pear.cakephp.org; fi"
+  - sh -c "if [ '$PHPCS' = '1' ]; then pear install --alldeps cakephp/CakePHP_CodeSniffer; fi"
+
+  - phpenv rehash
+  - set +H
+  - cp phpunit.xml.dist phpunit.xml
+
+script:
+  - sh -c "if [ '$DEFAULT' = '1' ]; then phpunit --stderr; fi"
+  - sh -c "if [ '$PHPCS' = '1' ]; then phpcs -p --extensions=php --standard=CakePHP --ignore=vendor --ignore=tests --ignore=docs --ignore=config . ; fi"
+
+notifications:
+  email: false
